@@ -157,7 +157,7 @@ export default function Home() {
           <p className="text-[16px] text-[#b0b0b0] mt-[5px]">Vídeo Oficial</p>
         </div>
 
-        {/* --- Barra de Progresso --- */}
+        {/* Barra de progresso do vídeo */}
         <div className="flex items-center w-full mb-[20px]">
           <span className="text-[14px] text-[#b0b0b0] w-[40px] text-center">{formatTime(currentTime)}</span>
           
@@ -173,7 +173,7 @@ export default function Home() {
           <span className="text-[14px] text-[#b0b0b0] w-[40px] text-center">{formatTime(duration)}</span>
         </div>
 
-        {/* --- Controles Principais --- */}
+        {/* Controles do player */}
         <div className="flex justify-between items-center w-full max-w-[280px] mx-auto">
           <FaBackward onClick={seekBackward} className="text-[24px] text-[#b0b0b0] cursor-pointer hover:text-white transition-colors" />
           
@@ -187,7 +187,7 @@ export default function Home() {
           
           <FaForward onClick={seekForward} className="text-[24px] text-[#b0b0b0] cursor-pointer hover:text-white transition-colors" />
 
-          {/* --- Controle de Volume com Hover Corrigido e Estável --- */}
+          {/* Controle de volume */}
           <div className="group relative flex items-center p-2 -m-2">
             <div onClick={toggleMute} className="cursor-pointer">
                 {isMuted || volume === 0 ? 
@@ -196,7 +196,7 @@ export default function Home() {
                 }
             </div>
             
-            {/* Painel do slider com animação estável */}
+            {/* O painel com o slider de volume que aparece no hover */}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 invisible opacity-0 
                           group-hover:visible group-hover:opacity-100 group-hover:-translate-y-2 transition-all duration-300">
                 <div className="p-3 bg-[#282828] border border-solid border-[#404040] rounded-xl shadow-lg">
