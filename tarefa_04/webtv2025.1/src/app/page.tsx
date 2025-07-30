@@ -7,10 +7,24 @@ export default function Home() {
   const [playing, setPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [videoTitle, setVideoTitle] = useState<string>("Carregando...");
   const [volume, setVolume] = useState<number>(1);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // 1. Adicionar lista de vídeos e estado do índice do vídeo atual
+  const videoList = [
+    {
+      file: "/assets/Sons_De_Cidade.mp4",
+      title: "Sons de Cidade",
+      icon: "/assets/images/imagem_cidade.jpg",
+    },
+    {
+      file: "/assets/Demon Slayer - Opening 1 _ 4K _ 60FPS _ Creditless _.mp4",
+      title: "Demon Slayer OP 1",
+      icon: "/assets/images/demon_slayer.jpg",
+    },
+  ];
+  const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(0);
 
   const formatTime = (timeInSeconds: number): string => {
     if (isNaN(timeInSeconds)) {
@@ -21,16 +35,16 @@ export default function Home() {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  // 3. Atualizar playPause para garantir autoplay correto
   const playPause = () => {
     const video = videoRef.current;
     if (!video) return;
-
     if (playing) {
       video.pause();
+      setPlaying(false);
     } else {
-      video.play();
+      video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
-    setPlaying(!playing);
   };
 
   const seekBackward = () => {
@@ -75,51 +89,54 @@ export default function Home() {
     }
   };
 
+  // 2. Atualizar useEffect para trocar vídeo ao terminar
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      const handleLoadedMetadata = () => {
-        setDuration(video.duration);
-        const videoFileName = video.src.split('/').pop()?.replace('.mp4', '') || "Vídeo sem título";
-        setVideoTitle(videoFileName);
-      };
+    if (!video) return;
 
-      const handleTimeUpdate = () => {
-        setCurrentTime(video.currentTime);
-      };
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+    };
 
-      const handleVideoEnd = () => {
-        setPlaying(false);
-        if (videoRef.current) {
-            videoRef.current.currentTime = 0;
-        }
-      };
-      
-      const handleVolumeChangeFromVideo = () => {
-        if(video) {
-          setVolume(video.volume);
-          setIsMuted(video.muted);
-        }
-      };
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime);
+    };
 
-      if (video.readyState >= 1) {
-          handleLoadedMetadata();
-      }
+    const handleVideoEnd = () => {
+      // Troca para o próximo vídeo
+      const nextIndex = (currentVideoIndex + 1) % videoList.length;
+      setCurrentVideoIndex(nextIndex);
+      setPlaying(true); // Garante autoplay
+    };
 
-      video.addEventListener('loadedmetadata', handleLoadedMetadata);
-      video.addEventListener('timeupdate', handleTimeUpdate);
-      video.addEventListener('ended', handleVideoEnd);
-      video.addEventListener('volumechange', handleVolumeChangeFromVideo);
+    const handleVolumeChangeFromVideo = () => {
+      setVolume(video.volume);
+      setIsMuted(video.muted);
+    };
 
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleVideoEnd);
+    video.addEventListener('volumechange', handleVolumeChangeFromVideo);
 
-      return () => {
-        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        video.removeEventListener('timeupdate', handleTimeUpdate);
-        video.removeEventListener('ended', handleVideoEnd);
-        video.removeEventListener('volumechange', handleVolumeChangeFromVideo);
-      };
+    // Atualiza src do vídeo
+    video.src = videoList[currentVideoIndex].file;
+    video.load();
+    setCurrentTime(0);
+
+    if (playing) {
+      video.play().catch(() => setPlaying(false));
+    } else {
+      video.pause();
     }
-  }, []); 
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleVideoEnd);
+      video.removeEventListener('volumechange', handleVolumeChangeFromVideo);
+    };
+  }, [currentVideoIndex, playing]);
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const video = videoRef.current;
@@ -132,6 +149,14 @@ export default function Home() {
 
     video.currentTime = newTime;
     setCurrentTime(newTime);
+  };
+
+  // 4. Adicionar função para selecionar vídeo manualmente
+  const handleSelectVideo = (index: number) => {
+    if (index !== currentVideoIndex) {
+      setCurrentVideoIndex(index);
+      setPlaying(true); // Autoplay ao trocar
+    }
   };
 
 
@@ -147,13 +172,12 @@ export default function Home() {
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
-            src="/assets/Sons_De_Cidade.mp4"
             onClick={playPause}
           ></video>
         </div>
 
         <div className="text-center mb-[25px]">
-          <h2 className="text-[24px] m-0 font-bold text-white capitalize">{videoTitle}</h2>
+          <h2 className="text-[24px] m-0 font-bold text-white capitalize">{videoList[currentVideoIndex].title}</h2>
           <p className="text-[16px] text-[#b0b0b0] mt-[5px]">Vídeo Oficial</p>
         </div>
 
@@ -216,6 +240,20 @@ export default function Home() {
                 </div>
             </div>
           </div>
+        </div>
+
+        {/* 6. Adicionar lista de seleção de vídeos no final */}
+        <div className="flex gap-2 mt-4 overflow-x-auto">
+          {videoList.map((video, index) => (
+            <button
+              key={index}
+              onClick={() => handleSelectVideo(index)}
+              className={`flex flex-col items-center p-2 border rounded ${index === currentVideoIndex ? 'bg-[#333]' : 'bg-transparent'}`}
+            >
+              <img src={video.icon} alt={video.title} className="w-12 h-12 object-cover rounded" />
+              <span className="text-xs mt-1">{video.title}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
